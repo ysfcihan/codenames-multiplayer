@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Codenames Multiplayer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin-bottom: 10px;
+        }
+
+        /* Giriş Ekranı */
+        .login-screen {
+            max-width: 500px;
+            margin: 100px auto;
+            background: rgba(255,255,255,0.1);
+            padding: 40px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            background: rgba(255,255,255,0.9);
+            color: #333;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(238, 90, 36, 0.6);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(45deg, #54a0ff, #2e86de);
+            color: white;
+            margin: 5px;
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(46, 134, 222, 0.6);
+        }
+
+        /* Oyun Ekranı */
+        .game-screen {
+            display: none;
+        }
+
+        .game-layout {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 20px;
+        }
+
+        .game-area {
+            background: rgba(255,255,255,0.05);
+            padding: 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .sidebar {
+            background: rgba(255,255,255,0.05);
+            padding: 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+        }
+
+        .team-score {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .red-team { color: #ff6b6b; }
+        .blue-team { color: #54a0ff; }
+
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            aspect-ratio: 1.5;
+            background: rgba(255,255,255,0.9);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            padding: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border: 3px solid transparent;
+            color: #333;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+
+        .card.revealed {
+            color: white;
+            cursor: not-allowed;
+        }
+
+        .card.red {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            border-color: #c44569;
+        }
+
+        .card.blue {
+            background: linear-gradient(135deg, #54a0ff, #2e86de);
+            border-color: #0097e6;
+        }
+
+        .card.neutral {
+            background: linear-gradient(135deg, #f1c40f, #f39c12);
+            border-color: #e67e22;
+        }
+
+        .card.assassin {
+            background: linear-gradient(135deg, #2c2c54, #40407a);
+            border-color: #1e1e1e;
+        }
+
+        /* Spymaster Anahtar */
+        .spymaster-key {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            margin-top: 20px;
+        }
+
+        .key-card {
+            aspect-ratio: 1.5;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+            color: white;
+            text-align: center;
+            padding: 2px;
+        }
+
+        .key-card.red { background: #ff6b6b; }
+        .key-card.blue { background: #54a0ff; }
+        .key-card.neutral { background: #f39c12; }
+        .key-card.assassin { background: #2c2c54; }
+
+        /* Oyuncu Listesi */
+        .players-section h3 {
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .team-players {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+        }
+
+        .team-players h4 {
+            margin-bottom: 10px;
+        }
+
+        .player {
+            padding: 8px 12px;
+            margin: 5px 0;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.1);
+            font-size: 14px;
+        }
+
+        .player.spymaster {
+            background: rgba(255,215,0,0.3);
+        }
+
+        /* Chat */
+        .chat-section {
+            margin-top: 20px;
+        }
+
+        .chat-messages {
+            height: 200px;
+            overflow-y: auto;
+            background: rgba(255,255,255,0.05);
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+
+        .message {
+            margin-bottom: 8px;
+            padding: 5px 8px;
+            border-radius: 5px;
+            background: rgba(255,255,255,0.1);
+            font-size: 12px;
+        }
+
+        .message-input {
+            display: flex;
+            gap: 10px;
+        }
+
+        .message-input input {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            border-radius: 5px;
+            background: rgba(255,255,255,0.9);
+            color: #333;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .status-bar {
+            text-align: center;
+            padding: 10px;
+            margin-bottom: 15px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+        }
+
+        .game-over-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .game-over-content {
+            background: white;
+            color: #333;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 400px;
+        }
+
+        .game-over-content h2 {
+            margin-bottom: 20px;
+            font-size: 2em;
+        }
+
+        @media (max-width: 768px) {
+            .game-layout {
+                grid-template-columns: 1fr;
+            }
+            
+            .game-board {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            
+            .card {
+                font-size: 12px;
+            }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- Giriş Ekranı -->
+    <div class="login-screen" id="loginScreen">
+        <div class="header">
+            <h1>🕵️ CODENAMES 🕵️</h1>
+            <p>Çok Oyunculu Gizli Ajan Oyunu</p>
+        </div>
+        
+        <div class="form-group">
+            <label>👤 Adınız:</label>
+            <input type="text" id="playerName" placeholder="Adınızı girin" maxlength="20">
+        </div>
+        
+        <div class="form-group">
+            <label>🏠 Oda Kodu:</label>
+            <input type="text" id="roomCode" placeholder="Oda kodu (örn: ROOM123)" maxlength="10">
+        </div>
+        
+        <div class="form-group">
+            <label>🎯 Takım:</label>
+            <select id="teamSelect">
+                <option value="red">🔴 Kırmızı Takım</option>
+                <option value="blue">🔵 Mavi Takım</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label>👨‍💼 Rol:</label>
+            <select id="roleSelect">
+                <option value="agent">🕵️ Ajan</option>
+                <option value="spymaster">👁️ Spymaster</option>
+            </select>
+        </div>
+        
+        <button class="btn btn-primary" onclick="joinGame()">🚀 Oyuna Katıl</button>
+        
+        <div style="margin-top: 20px; text-align: center; font-size: 14px;">
+            <p><strong>Nasıl Oynanır:</strong></p>
+            <p>• Spymaster takım arkadaşlarına ipucu verir</p>
+            <p>• Ajanlar kartları açarak tahmin eder</p>
+            <p>• İlk takımını tamamlayan kazanır!</p>
+        </div>
+    </div>
+
+    <!-- Oyun Ekranı -->
+    <div class="game-screen" id="gameScreen">
+        <div class="container">
+            <div class="header">
+                <h1>🕵️ CODENAMES 🕵️</h1>
+                <div class="status-bar">
+                    <strong>Oda: <span id="currentRoom"></span></strong> | 
+                    <strong>Oyuncu: <span id="currentPlayer"></span></strong> | 
+                    <strong>Takım: <span id="currentTeam"></span></strong> | 
+                    <strong>Rol: <span id="currentRole"></span></strong>
+                </div>
+            </div>
+
+            <div class="game-layout">
+                <div class="game-area">
+                    <div class="game-info">
+                        <div class="team-score red-team">
+                            🔴 Kırmızı: <span id="redScore">9</span>
+                        </div>
+                        <div>
+                            <strong>Sıra: <span id="currentTurn">Kırmızı</span></strong>
+                        </div>
+                        <div class="team-score blue-team">
+                            🔵 Mavi: <span id="blueScore">8</span>
+                        </div>
+                    </div>
+
+                    <div class="controls">
+                        <button class="btn btn-primary" onclick="newGame()">🎮 Yeni Oyun</button>
+                        <button class="btn btn-secondary" onclick="switchTurn()" id="switchTurnBtn" style="display: none;">
+                            🔄 Sırayı Değiştir
+                        </button>
+                    </div>
+
+                    <div class="game-board" id="gameBoard"></div>
+
+                    <div id="spymasterKey" style="display: none;">
+                        <h3 style="text-align: center; margin-bottom: 15px;">👁️ Spymaster Anahtarı</h3>
+                        <div class="spymaster-key" id="spymasterKeyBoard"></div>
+                    </div>
+                </div>
+
+                <div class="sidebar">
+                    <div class="players-section">
+                        <h3>🎭 Oyuncular</h3>
+                        <div class="team-players">
+                            <h4 class="red-team">🔴 Kırmızı Takım</h4>
+                            <div id="redPlayers"></div>
+                        </div>
+                        <div class="team-players">
+                            <h4 class="blue-team">🔵 Mavi Takım</h4>
+                            <div id="bluePlayers"></div>
+                        </div>
+                    </div>
+
+                    <div class="chat-section">
+                        <h3>💬 Chat</h3>
+                        <div class="chat-messages" id="chatMessages"></div>
+                        <div class="message-input">
+                            <input type="text" id="messageInput" placeholder="Mesajınızı yazın..." maxlength="100">
+                            <button class="btn btn-secondary" onclick="sendMessage()">Gönder</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="game-over-modal" id="gameOverModal">
+        <div class="game-over-content">
+            <h2 id="gameOverText">Oyun Bitti!</h2>
+            <button class="btn btn-primary" onclick="newGame()">🎮 Yeni Oyun Başlat</button>
+        </div>
+    </div>
+
+    <!-- Socket.IO -->
+    <script src="/socket.io/socket.io.js"></script>
+    
+    <script>
+        let socket;
+        let currentRoomCode;
+        let playerName;
+        let playerTeam;
+        let playerRole;
+        let gameState = null;
+        let spymasterKey = null;
+
+        function joinGame() {
+            const nameInput = document.getElementById('playerName');
+            const roomInput = document.getElementById('roomCode');
+            const teamSelect = document.getElementById('teamSelect');
+            const roleSelect = document.getElementById('roleSelect');
+
+            playerName = nameInput.value.trim();
+            currentRoomCode = roomInput.value.trim().toUpperCase();
+            playerTeam = teamSelect.value;
+            playerRole = roleSelect.value;
+
+            if (!playerName || !currentRoomCode) {
+                alert('Lütfen adınızı ve oda kodunu girin!');
+                return;
+            }
+
+            if (playerName.length > 20 || currentRoomCode.length > 10) {
+                alert('Ad (max 20) veya oda kodu (max 10) çok uzun!');
+                return;
+            }
+
+            // Socket bağlantısını başlat
+            socket = io();
+
+            socket.on('connect', () => {
+                console.log('Sunucuya bağlanıldı');
+                
+                // Odaya katıl
+                socket.emit('join-room', {
+                    roomCode: currentRoomCode,
+                    playerName: playerName,
+                    team: playerTeam,
+                    role: playerRole
+                });
+            });
+
+            socket.on('game-state', (data) => {
+                gameState = data;
+                updateGameUI();
+                showGameScreen();
+            });
+
+            socket.on('spymaster-key', (key) => {
+                spymasterKey = key;
+                updateSpymasterKey();
+            });
+
+            socket.on('player-joined', (data) => {
+                updatePlayers(data.players);
+                addChatMessage({
+                    player: 'System',
+                    message: `${data.player.name} odaya katıldı`,
+                    timestamp: Date.now()
+                });
+            });
+
+            socket.on('player-left', (data) => {
+                updatePlayers(data.players);
+                addChatMessage({
+                    player: 'System',
+                    message: `${data.player.name} oyundan ayrıldı`,
+                    timestamp: Date.now()
+                });
+            });
+
+            socket.on('new-message', (message) => {
+                addChatMessage(message);
+            });
+
+            socket.on('disconnect', () => {
+                console.log('Sunucu bağlantısı kesildi');
+                alert('Sunucu bağlantısı kesildi. Sayfayı yenileyip tekrar deneyin.');
+            });
+        }
+
+        function showGameScreen() {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('gameScreen').style.display = 'block';
+            
+            document.getElementById('currentRoom').textContent = currentRoomCode;
+            document.getElementById('currentPlayer').textContent = playerName;
+            document.getElementById('currentTeam').textContent = playerTeam === 'red' ? 'Kırmızı' : 'Mavi';
+            document.getElementById('currentRole').textContent = playerRole === 'agent' ? 'Ajan' : 'Spymaster';
+            
+            // Spymaster ise sıra değiştir butonunu göster
+            if (playerRole === 'spymaster') {
+                document.getElementById('switchTurnBtn').style.display = 'inline-block';
+            }
+        }
+
+        function updateGameUI() {
+            if (!gameState) return;
+
+            // Skorları güncelle
+            document.getElementById('redScore').textContent = gameState.redScore;
+            document.getElementById('blueScore').textContent = gameState.blueScore;
+            document.getElementById('currentTurn').textContent = gameState.currentTeam === 'red' ? 'Kırmızı' : 'Mavi';
+
+            // Kartları güncelle
+            updateGameBoard();
+            
+            // Oyuncuları güncelle
+            updatePlayers(gameState.players);
+
+            // Oyun bitti mi kontrol et
+            if (gameState.gameOver) {
+                showGameOver();
+            }
+        }
+
+        function updateGameBoard() {
+            const board = document.getElementById('gameBoard');
+            board.innerHTML = '';
+
+            for (let i = 0; i < 25; i++) {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.textContent = gameState.words[i];
+                
+                if (gameState.revealed[i] && spymasterKey) {
+                    card.classList.add('revealed', spymasterKey[i]);
+                } else if (gameState.revealed[i]) {
+                    card.classList.add('revealed');
+                    // Rengi tahmin etmek için (sadece görsel)
+                    if (gameState.redScore < 9 && gameState.blueScore < 8) {
+                        card.classList.add('red');
+                    } else if (gameState.blueScore < 8) {
+                        card.classList.add('blue');
+                    }
+                }
+                
+                if (!gameState.revealed[i] && playerRole === 'agent') {
+                    card.onclick = () => revealCard(i);
+                }
+
+                board.appendChild(card);
+            }
+        }
+
+        function updateSpymasterKey() {
+            if (playerRole !== 'spymaster' || !spymasterKey) return;
+
+            document.getElementById('spymasterKey').style.display = 'block';
+            const keyBoard = document.getElementById('spymasterKeyBoard');
+            keyBoard.innerHTML = '';
+
+            for (let i = 0; i < 25; i++) {
+                const keyCard = document.createElement('div');
+                keyCard.className = `key-card ${spymasterKey[i]}`;
+                keyCard.textContent = gameState.words[i];
+                keyBoard.appendChild(keyCard);
+            }
+        }
+
+        function updatePlayers(players) {
+            const redPlayers = document.getElementById('redPlayers');
+            const bluePlayers = document.getElementById('bluePlayers');
+            
+            redPlayers.innerHTML = '';
+            bluePlayers.innerHTML = '';
+
+            players.forEach(player => {
+                const playerDiv = document.createElement('div');
+                playerDiv.className = `player ${player.role}`;
+                playerDiv.textContent = `${player.name} ${player.role === 'spymaster' ? '👁️' : '🕵️'}`;
+                
+                if (player.team === 'red') {
+                    redPlayers.appendChild(playerDiv);
+                } else {
+                    bluePlayers.appendChild(playerDiv);
+                }
+            });
+        }
+
+        function revealCard(index) {
+            if (socket && playerRole === 'agent') {
+                socket.emit('reveal-card', index);
+            }
+        }
+
+        function newGame() {
+            if (socket) {
+                socket.emit('new-game');
+                document.getElementById('gameOverModal').style.display = 'none';
+            }
+        }
+
+        function switchTurn() {
+            if (socket && playerRole === 'spymaster') {
+                socket.emit('switch-turn');
+            }
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (message && socket) {
+                socket.emit('send-message', message);
+                input.value = '';
+            }
+        }
+
+        function addChatMessage(message) {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            
+            const time = new Date(message.timestamp).toLocaleTimeString('tr-TR', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            if (message.player === 'System') {
+                messageDiv.innerHTML = `<strong>[${time}] ${message.message}</strong>`;
+                messageDiv.style.backgroundColor = 'rgba(255,255,255,0.05)';
+            } else {
+                const teamColor = message.team === 'red' ? '#ff6b6b' : '#54a0ff';
+                const roleIcon = message.role === 'spymaster' ? '👁️' : '🕵️';
+                messageDiv.innerHTML = `<strong style="color: ${teamColor}">[${time}] ${roleIcon} ${message.player}:</strong> ${message.message}`;
+            }
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function showGameOver() {
+            const modal = document.getElementById('gameOverModal');
+            const text = document.getElementById('gameOverText');
+            
+            if (gameState.winner === 'red') {
+                text.textContent = '🔴 Kırmızı Takım Kazandı! 🎉';
+            } else if (gameState.winner === 'blue') {
+                text.textContent = '🔵 Mavi Takım Kazandı! 🎉';
+            } else {
+                text.textContent = 'Oyun Bitti!';
+            }
+            
+            modal.style.display = 'flex';
+        }
+
+        // Enter tuşu ile mesaj gönderme
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('messageInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
